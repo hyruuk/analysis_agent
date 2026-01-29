@@ -22,16 +22,13 @@
 - **Document assumptions**: If code assumes data structure/format/preprocessing, state it explicitly
 - **Type hints for public APIs**: All user-facing functions have type annotations
 - **Google-style docstrings**: For all public functions
+- **Package installability**: Project must be installable as a Python package using `pyproject.toml` (not setup.py), with tool configurations (ruff, pytest, etc.)
+- **Use ruff and pytest**
+
 
 ---
 
 ## 2. Data Organization
-
-### Paths Configuration
-- **Default locations**: Scripts look in `./data/` and `./env/` by default
-- **Configurable paths**: Allow override via `config.yaml` for data and environment paths
-- **Config template required**: Provide `config.yaml.template` that must be filled on first use
-- **Validate config on startup**: Check config exists and is valid before running tasks
 
 ### Data Integrity
 - **Raw data is immutable**: Never overwrite or modify original data files
@@ -41,15 +38,9 @@
 
 ### Processed Data Storage
 - **Location**: All processed outputs go to `{DATA_PATH}/processed/{script_name}/`
-- **BIDS structure**: Maintain BIDS organization within processed folders when applicable:
-  ```
-  {DATA_PATH}/processed/{script_name}/{subject}/{session}/...
-  ```
-- **BIDS naming**: Follow BIDS conventions for filenames:
-  ```
-  {subject}_{session}_task-{task}_{run}_desc-{desc}_stat-{stat}.nii.gz
-  ```
-- **Derivative metadata**: Include dataset_description.json in processed folders documenting pipeline
+- **BIDS structure**: Maintain BIDS organization within processed folders when applicable
+- **BIDS naming**: Follow BIDS conventions for filenames (e.g., `sub-01_ses-001_task-X_run-01_desc-Y_stat-z.nii.gz`)
+- **Derivative metadata**: Include `dataset_description.json` in processed folders documenting pipeline
 
 ---
 
@@ -57,22 +48,26 @@
 
 ### Centralized Configuration
 - **Never hardcode paths**: All paths come from `config.yaml`
+- **Default locations**: Scripts look in `./data/` and saves outputs in `./reports/` by default
+- **Configurable paths**: Allow override via `config.yaml` for data and environment paths
 - **Template first**: Provide `config.yaml.template` with `<PLACEHOLDER>` values
+- **Validate config on startup**: Check config exists and is valid before running tasks
 - **Gitignore config**: Actual `config.yaml` is always gitignored
 - **Document all options**: Every config parameter has inline comment
 
 ### Environment Reproducibility
-- **Pin all dependencies**: `requirements.txt` with exact versions (`package==X.Y.Z`)
-- **Document system requirements**: Python version, OS constraints
-- **One environment per project**: Virtual environment in `./env/` or path from config
-- **Provide setup script**: `setup.sh` for environment creation and dependency installation
+- **Use pyproject.toml**: Define package metadata, dependencies (pinned to exact versions), and tool configurations
+- **Pin all dependencies**: Use exact versions (`package==X.Y.Z`) in `pyproject.toml` for reproducibility
+- **Document system requirements**: Python version in `requires-python` field of `pyproject.toml`
+- **Virtual environment**: Default location `./env/`, configurable via `config.yaml`
+- **Provide setup script**: `setup.sh` for environment creation (`pip install -e .`)
 
 ---
 
 ## 4. Logging System
 
 ### Log Organization
-- **Centralized logs**: All logs go to `./logs/` directory
+- **Centralized logs**: All logs go to `./logs/` directory (gitignored)
 - **SLURM outputs**: Direct SLURM output files to `./logs/{script}_{date}/slurm-*.out`
 - **Structured naming**: `logs/{module}/{subject}_{session}_{timestamp}.log` or similar
 - **Separate log levels**: Support verbosity control (WARNING, INFO, DEBUG)
@@ -126,10 +121,10 @@
 ### What Never Goes in Git
 - Raw or processed data files (use data repositories)
 - Generated outputs (figures, tables, stats)
-- Secrets, passwords, API keys, absolute paths
+- Secrets, passwords, API keys
 - Virtual environments (`env/`, `.venv/`)
 - User-specific config (`config.yaml`)
-- Data (`data/`), results (`reports/`) and log files (`logs/`)
+- Data (`data/`), results (`reports/`), and logs (`logs/`)
 - Cache files (`__pycache__/`, `.ipynb_checkpoints/`, `.DS_Store`)
 
 ### Results Versioning
@@ -164,7 +159,7 @@ For every statistical test, document:
 - **Progress tracking**: Use logging to show what's running
 - **Informative errors**: Tell user what's wrong AND how to fix it
 
-### Computational Job Management
+### Computational Job Management (if requested)
 - **Support cluster computing**: Scripts work on local and HPC/SLURM
 - **Parallel processing**: Use available cores for independent computations
 - **Resource documentation**: Document typical runtime and memory needs
@@ -191,9 +186,7 @@ Save JSON sidecar with each major output:
 ```json
 {
   "description": "Statistical map for condition X",
-  "generated_by": {
-    "path": "code/glm/compute_glm.py"
-  },
+  "script": "code/glm/compute_glm.py",
   "git_commit": "a7f3e9c",
   "date": "2024-01-15T14:30:22",
   "parameters": {
@@ -232,12 +225,12 @@ Save JSON sidecar with each major output:
 
 ### Code Sharing
 - **Clear README**: Installation, configuration, basic usage
-- **Include LICENSE**: Open-source license (MIT, GPL, BSD)
+- **Include LICENSE**: Recommend open-source licenses (MIT, GPL, BSD) but do not enforce them
 - **CITATION.cff**: Proper attribution information
 
 ### Data Sharing
 - **Use repositories**: OpenNeuro (BIDS), OSF, Zenodo, Dryad
-- **Anonymize**: Remove PHI/PII before sharing
+- **Anonymize**: Scan for PHI/PII and remove before sharing
 - **DOI for datasets**: Permanent, citable identifiers when available
 
 ### Publication Standards
@@ -260,14 +253,15 @@ Before asking user to commit or publish:
 - [ ] Logging implemented (not print statements)
 
 **Documentation:**
-- [ ] README.md updated
-- [ ] TASKS.md current
-- [ ] CHANGELOG.md updated
+- [ ] README.md up to date
+- [ ] TASKS.md up to date
+- [ ] CHANGELOG.md up to date
 
 **Reproducibility:**
-- [ ] Dependencies pinned in requirements.txt
-- [ ] Random seeds set
-- [ ] Parameters + git hash + script name/path logged with outputs
+- [ ] Package defined in pyproject.toml
+- [ ] Dependencies pinned in pyproject.toml (exact versions)
+- [ ] Random seeds set (unless required otherwise)
+- [ ] Parameters + git hash + script path logged with outputs
 - [ ] Config template provided/updated
 
 **Data:**
@@ -285,15 +279,15 @@ Before asking user to commit or publish:
 
 ## Critical Don'ts
 
-❌ **Never** hardcode paths or parameters
-❌ **Never** modify raw data - always create derivatives
-❌ **Never** commit data, secrets, or absolute paths to git
-❌ **Never** skip documentation updates when functionality changes
-❌ **Never** use unclear variable names (`x`, `tmp`, `data2`)
-❌ **Never** report p-values without correction method
-❌ **Never** generate results without logging git hash + parameters + script info
-❌ **Never** commit code on behalf of user
-❌ **Never** use print() for logging - use logging module
+- **NEVER** hardcode paths or parameters
+- **NEVER** modify raw data - always create derivatives
+- **NEVER** commit data, secrets, or absolute paths
+- **NEVER** skip documentation updates when functionality changes
+- **NEVER** use unclear variable names (`x`, `tmp`, `data2`)
+- **NEVER** report p-values without correction method
+- **NEVER** generate results without logging git hash + parameters + script path
+- **NEVER** commit code on behalf of user
+- **NEVER** use print() for logging - use logging module
 
 ---
 
@@ -309,8 +303,8 @@ project/
 │           ├── {subject}/          # Maintain BIDS structure within
 │           │   └── {session}/
 │           └── dataset_description.json
-├── code/ or src/                   # All analysis code
-│   ├── {module}/                   # Analysis modules (glm, mvpa, etc.)
+├── code/                           # All analysis code
+│   ├── {module}/                   # Analysis modules (e.g. glm, mvpa, etc.)
 │   │   ├── {analysis_script}.py
 │   │   └── utils.py
 │   └── utils/                      # Shared utilities across modules
@@ -327,7 +321,7 @@ project/
 ├── docs/                           # Documentation
 ├── config.yaml.template            # Config template with <PLACEHOLDER> values
 ├── config.yaml                     # User config (gitignored)
-├── requirements.txt                # Pinned dependencies
+├── pyproject.toml                  # Package metadata, pinned dependencies, tool configs
 ├── setup.sh                        # Environment setup script
 ├── tasks.py                        # Task runner (invoke/Makefile)
 ├── .gitignore
@@ -367,4 +361,4 @@ data/
 
 ---
 
-**These are living guidelines. Adapt to project needs, and remember to always prioritize reproducibility and transparence.**
+**These are living guidelines. Adapt to project needs, and always prioritize reproducibility and transparency.**

@@ -95,10 +95,10 @@
 ## 5. Documentation (Auto-Updated)
 
 **When you modify functionality, automatically update without asking:**
-- ✅ **README.md** - Feature list, usage examples, workflow
-- ✅ **TASKS.md** - Full documentation of all tasks/scripts with arguments and examples
-- ✅ **Docstrings** - Function documentation matches behavior
-- ✅ **CHANGELOG.md** - Log significant changes
+- **README.md** - Feature list, usage examples, workflow
+- **TASKS.md** - Full documentation of all tasks/scripts with arguments and examples
+- **Docstrings** - Function documentation matches behavior
+- **CHANGELOG.md** - Log significant changes
 
 **Exception**: Only skip if user explicitly says "don't update docs"
 
@@ -251,6 +251,7 @@ Before asking user to commit or publish:
 - [ ] Utilities separated from scripts
 - [ ] User-facing tasks provided
 - [ ] Logging implemented (not print statements)
+- [ ] Dead code removed
 
 **Documentation:**
 - [ ] README.md up to date
